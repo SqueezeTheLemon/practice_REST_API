@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class ApiV1PostController {
     private final PostService postService;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<PostDto> getItems() {
         List<Post> items = postService.findAll();
 
@@ -29,6 +31,7 @@ public class ApiV1PostController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public PostDto getItem(@PathVariable int id){
         Post post = postService.findById(id).get();
         return new PostDto(post);

@@ -178,4 +178,53 @@ public class ApiV1PostControllerTest {
         assertThat(post.getTitle()).isEqualTo("제목 modified");
         assertThat(post.getContent()).isEqualTo("내용 modified");
     }
+
+    @Test
+    @DisplayName("글 단건조회, 없는 글이면 404")
+    void t6() throws Exception {
+        int id = Integer.MAX_VALUE; // 절대 없을 id
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/posts/%d".formatted(id))
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1PostController.class))
+                .andExpect(handler().methodName("getItem"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.resultCode").value("404-1"))
+                .andExpect(jsonPath("$.msg").value("해당 데이터가 존재하지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("글 작성, 제목이 비어 있으면 400")
+    void t7() throws Exception {
+        long countBefore = postService.count();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/posts")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "title": "",
+                                            "content": "내용 new"
+                                        }
+                                        """)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1PostController.class))
+                .andExpect(handler().methodName("write"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.resultCode").value("400-1"))
+                // 💡 기본 메시지는 언어(로케일)마다 달라서, "필드-규칙" 부분만 확인해요
+                .andExpect(jsonPath("$.msg").value(Matchers.containsString("title-NotBlank")));
+
+        // 글이 만들어지면 안 돼요
+        assertThat(postService.count()).isEqualTo(countBefore);
+    }
 }

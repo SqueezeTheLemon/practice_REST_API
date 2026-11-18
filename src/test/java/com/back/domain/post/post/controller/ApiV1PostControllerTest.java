@@ -145,4 +145,37 @@ public class ApiV1PostControllerTest {
                 .andExpect(jsonPath("$.data.subject").value("제목 new"))
                 .andExpect(jsonPath("$.data.body").value("내용 new"));
     }
+
+    @Test
+    @DisplayName("글 수정")
+    void t5() throws Exception {
+        int id = 1;
+
+        // When
+        ResultActions resultActions = mvc
+                .perform(
+                        put("/api/v1/posts/%d".formatted(id))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "title": "제목 modified",
+                                            "content": "내용 modified"
+                                        }
+                                        """)
+                )
+                .andDo(print());
+
+        // Then 1: 응답 검증
+        resultActions
+                .andExpect(handler().handlerType(ApiV1PostController.class))
+                .andExpect(handler().methodName("modify"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-1"))
+                .andExpect(jsonPath("$.msg").value("%d번 글이 수정되었습니다.".formatted(id)));
+
+        // Then 2: DB에 실제로 반영됐는지 검증
+        Post post = postService.findById(id).get();
+        assertThat(post.getTitle()).isEqualTo("제목 modified");
+        assertThat(post.getContent()).isEqualTo("내용 modified");
+    }
 }

@@ -71,4 +71,30 @@ public class ApiV1PostController {
                 new PostDto(post)
         );
     }
+
+    public record PostModifyReqBody(
+            @NotBlank
+            @Size(min = 2, max = 100)
+            String title,
+
+            @NotBlank
+            @Size(min = 2, max = 5000)
+            String content
+    ) {
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public RsData<Void> modify(
+            @PathVariable int id,
+            @RequestBody @Valid PostModifyReqBody reqBody
+    ) {
+        Post post = postService.findById(id).get();
+        postService.modify(post, reqBody.title(), reqBody.content()); // 💡 save 없이도 트랜잭션 끝에 변경 감지(dirty checking)로 UPDATE돼요
+
+        return new RsData<>(
+                "200-1",
+                "%d번 글이 수정되었습니다.".formatted(id)
+        );
+    }
 }

@@ -136,7 +136,7 @@ public class ApiV1PostControllerTest {
         resultActions
                 .andExpect(handler().handlerType(ApiV1PostController.class))
                 .andExpect(handler().methodName("write"))
-                .andExpect(status().isOk()) // resultCode는 201-1이지만, 실제 HTTP 상태는 아직 200이에요 (3단계에서 바꿔요)
+                .andExpect(status().isCreated()) // resultCode 201-1 → 실제 HTTP 상태도 201이어야 해요
                 .andExpect(jsonPath("$.resultCode").value("201-1"))
                 .andExpect(jsonPath("$.msg").value("%d번 글이 작성되었습니다.".formatted(post.getId())))
                 .andExpect(jsonPath("$.data.id").value(post.getId()))

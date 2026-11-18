@@ -41,8 +41,13 @@ public class PostService {
         postRepository.delete(post);
     }
 
-    public void writeComment(Post post, String content) {
-        post.addComment(content);
+    public PostComment writeComment(Post post, String content) {
+        return post.addComment(content);
+    }
+
+    // 쌓아 둔 변경사항(INSERT 등)을 지금 바로 DB에 보내요 → 새 댓글의 id가 이때 정해져요
+    public void flush() {
+        postRepository.flush();
     }
 
     public boolean deleteComment(Post post, PostComment postComment) {

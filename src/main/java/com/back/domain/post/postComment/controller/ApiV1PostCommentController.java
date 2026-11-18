@@ -85,4 +85,30 @@ public class ApiV1PostCommentController {
                 "%d번 댓글이 수정되었습니다.".formatted(id)
         );
     }
+
+    public record PostCommentWriteReqBody(
+            @NotBlank
+            @Size(min = 2, max = 100)
+            String content
+    ) {
+    }
+
+    @PostMapping
+    @Transactional
+    public RsData<PostCommentDto> write(
+            @PathVariable int postId,
+            @RequestBody @Valid PostCommentWriteReqBody reqBody
+    ) {
+        Post post = postService.findById(postId).get();
+        PostComment postComment = postService.writeComment(post, reqBody.content());
+
+        // 💡 댓글은 cascade로 저장돼서, flush 전에는 아직 id가 0이에요. 응답에 id를 담으려면 먼저 flush!
+        postService.flush();
+
+        return new RsData<>(
+                "201-1",
+                "%d번 댓글이 작성되었습니다.".formatted(postComment.getId()),
+                new PostCommentDto(postComment)
+        );
+    }
 }

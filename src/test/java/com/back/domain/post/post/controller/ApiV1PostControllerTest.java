@@ -1,6 +1,8 @@
 package com.back.domain.post.post.controller;
 
+import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.service.PostService;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +13,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -50,5 +55,60 @@ public class ApiV1PostControllerTest {
 
         // Then 2: DB에서 정말 사라졌는지 검증
         assertThat(postService.findById(id)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("글 단건조회")
+    void t2() throws Exception {
+        int id = 1;
+        Post post = postService.findById(id).get(); // 기댓값은 db에서 꺼낸 진짜 데이터로 검증 준비
+
+        // 이 경우를 테스트한다
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/posts/%d".formatted(id))
+                )
+                .andDo(print());
+
+        // 응답 검증
+        resultActions
+                .andExpect(handler().handlerType(ApiV1PostController.class))
+                .andExpect(handler().methodName("getItem"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(post.getId()))
+                .andExpect(jsonPath("$.createdDate").value(Matchers.startsWith(post.getCreateDate().toString().substring(0, 16))))
+                .andExpect(jsonPath("$.modifiedDate").value(Matchers.startsWith(post.getModifyDate().toString().substring(0, 16))))
+                .andExpect(jsonPath("$.subject").value(post.getTitle()))
+                .andExpect(jsonPath("$.body").value(post.getContent()));
+
+    }
+
+    @Test
+    @DisplayName("글 다건조회")
+    void t3() throws Exception {
+        List<Post> posts = postService.findAll();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/posts")
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1PostController.class))
+                .andExpect(handler().methodName("getItems"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(posts.size()));
+
+        for (int i = 0 ; i < posts.size() ; i++) {
+            Post post = posts.get(i);
+
+            resultActions.andExpect(jsonPath("$[%d].id".formatted(i)).value(post.getId()))
+                    .andExpect(jsonPath("$[%d].createdDate".formatted(i)).value(Matchers.startsWith(post.getCreateDate().toString().substring(0, 16))))
+                    .andExpect(jsonPath("$[%d].modifiedDate".formatted(i)).value(Matchers.startsWith(post.getModifyDate().toString().substring(0, 16))))
+                    .andExpect(jsonPath("$[%d].subject".formatted(i)).value(post.getTitle()))
+                    .andExpect(jsonPath("$[%d].body".formatted(i)).value(post.getContent()));
+        }
+
     }
 }
